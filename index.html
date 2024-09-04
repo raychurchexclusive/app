@@ -8,18 +8,34 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #f4f4f4;
+            background-color: #333;
+            color: #eee;
         }
         h1 {
             text-align: center;
+            color: #ff4d4d;
         }
         .container {
             max-width: 800px;
             margin: auto;
             padding: 20px;
-            background: #fff;
+            background: #444;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group button {
+            background-color: #ff4d4d;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background-color: #cc0000;
         }
         .item-list {
             margin-top: 20px;
@@ -29,41 +45,18 @@
             border-collapse: collapse;
         }
         .item-list th, .item-list td {
-            border: 1px solid #ddd;
+            border: 1px solid #555;
             padding: 8px;
             text-align: left;
+            color: #eee;
         }
         .item-list th {
-            background-color: #f4f4f4;
+            background-color: #666;
         }
-        .total, .totals-display {
+        .total {
             text-align: right;
             font-size: 1.2em;
             margin-top: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .form-group button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .form-group button:hover {
-            background-color: #218838;
         }
         .popup {
             display: none;
@@ -71,12 +64,13 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: #fff;
+            background-color: #444;
             padding: 20px;
-            border: 1px solid #ddd;
+            border: 1px solid #555;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
             z-index: 1000;
+            color: #eee;
         }
         .popup button {
             margin: 5px;
@@ -86,18 +80,18 @@
             cursor: pointer;
         }
         .popup .confirm-btn {
-            background-color: #28a745;
+            background-color: #ff4d4d;
             color: white;
         }
         .popup .confirm-btn:hover {
-            background-color: #218838;
+            background-color: #cc0000;
         }
         .popup .cancel-btn {
-            background-color: #dc3545;
+            background-color: #555;
             color: white;
         }
         .popup .cancel-btn:hover {
-            background-color: #c82333;
+            background-color: #333;
         }
         .overlay {
             display: none;
@@ -106,8 +100,15 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             z-index: 999;
+        }
+        .totals-display textarea {
+            width: 100%;
+            height: 100px;
+            background: #333;
+            color: #eee;
+            border: 1px solid #555;
         }
     </style>
 </head>
@@ -116,23 +117,10 @@
         <h1>Vendor POS System</h1>
         
         <div class="form-group">
-            <label for="item-name">Item Name:</label>
-            <input type="text" id="item-name" placeholder="Enter item name">
-        </div>
-        
-        <div class="form-group">
-            <label for="item-price">Item Price:</label>
-            <input type="number" id="item-price" placeholder="Enter item price" step="0.01">
-        </div>
-        
-        <div class="form-group">
-            <button onclick="addItem()">Add Item</button>
-        </div>
-        
-        <div class="form-group">
             <button onclick="showSellTicketPopup()">Sell Ticket</button>
             <button onclick="cashTicket()">Cash Ticket</button>
-            <button onclick="showTotals()">Show Totals</button>
+            <button onclick="showTotals()">View Totals</button>
+            <button onclick="showSetPricePopup()">Set Price</button>
         </div>
         
         <div class="item-list">
@@ -150,7 +138,7 @@
         </div>
         
         <div class="total">
-            Total: $<span id="total-amount">0.00</span>
+            Tickets Sold: <span id="tickets-sold">0</span>
         </div>
     </div>
 
@@ -165,41 +153,36 @@
         </div>
     </div>
 
-    <!-- Totals display -->
-    <div class="totals-display" id="totals-display" style="display: none;">
+    <!-- Popup for setting price -->
+    <div class="popup" id="set-price-popup">
+        <label for="new-price">Enter New Ticket Price ($):</label>
+        <input type="number" id="new-price" step="0.01" min="0">
+        <div>
+            <button class="confirm-btn" onclick="setPrice()">Set Price</button>
+            <button class="cancel-btn" onclick="closeSetPricePopup()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Popup for showing totals -->
+    <div class="popup" id="totals-popup">
         <p>Cash Sales Total: $<span id="cash-total">0.00</span></p>
         <p>Credit Sales Total: $<span id="credit-total">0.00</span></p>
+        <p>Total Sales: $<span id="total-sales">0.00</span></p>
+        <p>Profit: $<span id="profit-total">0.00</span></p>
+        <label for="sales-record">Save Sales Record:</label>
+        <textarea id="sales-record" readonly></textarea>
+        <div>
+            <button class="confirm-btn" onclick="saveRecord()">Save Record</button>
+            <button class="cancel-btn" onclick="closeTotalsPopup()">Close</button>
+        </div>
     </div>
     
     <script>
         let totalAmount = 0;
         let cashTotal = 0;
         let creditTotal = 0;
-
-        function addItem() {
-            const itemName = document.getElementById('item-name').value.trim();
-            const itemPrice = parseFloat(document.getElementById('item-price').value);
-            
-            if (!itemName || isNaN(itemPrice) || itemPrice <= 0) {
-                alert('Please enter a valid item name and price.');
-                return;
-            }
-            
-            const tableBody = document.getElementById('item-list-body');
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td>${itemName}</td>
-                <td>$${itemPrice.toFixed(2)}</td>
-            `;
-            tableBody.appendChild(newRow);
-            
-            totalAmount += itemPrice;
-            document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
-            
-            // Clear input fields
-            document.getElementById('item-name').value = '';
-            document.getElementById('item-price').value = '';
-        }
+        let ticketsSold = 0;
+        let ticketPrice = 10;
 
         function showSellTicketPopup() {
             document.getElementById('popup-overlay').style.display = 'block';
@@ -207,29 +190,86 @@
         }
 
         function confirmSale() {
-            totalAmount += 10;
-            creditTotal += 10;
-            document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
-            document.getElementById('popup-overlay').style.display = 'none';
-            document.getElementById('sell-ticket-popup').style.display = 'none';
+            totalAmount += ticketPrice;
+            creditTotal += ticketPrice;
+            ticketsSold += 1;
+            document.getElementById('tickets-sold').textContent = ticketsSold;
+            closeSellTicketPopup();
         }
 
         function cancelSale() {
+            closeSellTicketPopup();
+        }
+
+        function closeSellTicketPopup() {
             document.getElementById('popup-overlay').style.display = 'none';
             document.getElementById('sell-ticket-popup').style.display = 'none';
         }
 
         function cashTicket() {
-            totalAmount += 10;
-            cashTotal += 10;
-            document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
+            totalAmount += ticketPrice;
+            cashTotal += ticketPrice;
+            ticketsSold += 1;
+            document.getElementById('tickets-sold').textContent = ticketsSold;
             alert('Ticket sold!');
         }
 
         function showTotals() {
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString();
+            const formattedTime = now.toLocaleTimeString();
+            const totalSales = cashTotal + creditTotal;
+            const profit = totalSales * 0.9;
             document.getElementById('cash-total').textContent = cashTotal.toFixed(2);
             document.getElementById('credit-total').textContent = creditTotal.toFixed(2);
-            document.getElementById('totals-display').style.display = 'block';
+            document.getElementById('total-sales').textContent = totalSales.toFixed(2);
+            document.getElementById('profit-total').textContent = profit.toFixed(2);
+            document.getElementById('sales-record').value = `Date: ${formattedDate}\nTime: ${formattedTime}\nTickets Sold: ${ticketsSold}\nCash Sales Total: $${cashTotal.toFixed(2)}\nCredit Sales Total: $${creditTotal.toFixed(2)}\nTotal Sales: $${totalSales.toFixed(2)}\nProfit: $${profit.toFixed(2)}`;
+            document.getElementById('popup-overlay').style.display = 'block';
+            document.getElementById('totals-popup').style.display = 'block';
+        }
+
+        function closeTotalsPopup() {
+            document.getElementById('popup-overlay').style.display = 'none';
+            document.getElementById('totals-popup').style.display = 'none';
+        }
+
+        function saveRecord() {
+            const textToSave = document.getElementById('sales-record').value;
+            const now = new Date();
+            const formattedDate = now.toISOString().slice(0, 10); // YYYY-MM-DD
+            const filename = `sales_record_${formattedDate}.txt`;
+            const blob = new Blob([textToSave], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('Record saved!');
+        }
+
+        function showSetPricePopup() {
+            document.getElementById('popup-overlay').style.display = 'block';
+            document.getElementById('set-price-popup').style.display = 'block';
+        }
+
+        function setPrice() {
+            const newPrice = parseFloat(document.getElementById('new-price').value);
+            if (isNaN(newPrice) || newPrice <= 0) {
+                alert('Please enter a valid price.');
+                return;
+            }
+            ticketPrice = newPrice;
+            document.getElementById('new-price').value = '';
+            closeSetPricePopup();
+        }
+
+        function closeSetPricePopup() {
+            document.getElementById('popup-overlay').style.display = 'none';
+            document.getElementById('set-price-popup').style.display = 'none';
         }
     </script>
 </body>
